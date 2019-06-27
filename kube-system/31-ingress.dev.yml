@@ -1,0 +1,17 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-local
+  namespace: kube-system
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: http
+spec:
+  rules:
+  - host: kub.wavebook.local
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 80

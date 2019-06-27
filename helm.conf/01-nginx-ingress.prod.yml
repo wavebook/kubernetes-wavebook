@@ -15,7 +15,13 @@ controller:
     http: 80
     https: 443
 
-  config: {}
+  config: {
+    # FIXME: https://github.com/kubernetes/ingress-nginx/issues/1957#issuecomment-462826897
+    use-forwarded-headers: "true",
+    use-geoip: "false",
+    use-geoip2: "true",
+    enable-brotli: "true"
+  }
   # Will add custom header to Nginx https://github.com/kubernetes/ingress-nginx/tree/master/docs/examples/customization/custom-headers
   headers: {}
 
@@ -178,7 +184,7 @@ controller:
 
   service:
     annotations: {
-      "service.beta.kubernetes.io/aws-load-balancer-ssl-cert": "arn:aws:acm:ap-east-1:951350789146:certificate/d97a92db-0b23-46f8-8a09-217b9d48d62e",
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-cert": "arn:aws:acm:ap-east-1:951350789146:certificate/b5e3dcd8-2abf-4444-b8d9-589de2bf80c2",
       "service.beta.kubernetes.io/aws-load-balancer-ssl-ports": "443",
       "service.beta.kubernetes.io/aws-load-balancer-backend-protocol": "http",
       "service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "60"

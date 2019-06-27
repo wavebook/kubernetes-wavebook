@@ -12,13 +12,16 @@
 ##
 image:
   registry: docker.io
-  repository: bitnami/wordpress
-  tag: 5.2.1-debian-9-r9
+  #repository: bitnami/wordpress
+  repository: wavebook/wordpress
+  #tag: 5.2.1-debian-9-r9
+  tag: latest
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
   ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
   ##
-  pullPolicy: IfNotPresent
+  #pullPolicy: IfNotPresent
+  pullPolicy: Always
   ## Optionally specify an array of imagePullSecrets.
   ## Secrets must be manually created in the namespace.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -45,12 +48,12 @@ wordpressEmail: hello@wavebook.io
 ## First name
 ## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
 ##
-wordpressFirstName: Wave
+wordpressFirstName: Wavebook
 
 ## Last name
 ## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
 ##
-wordpressLastName: Book
+wordpressLastName: Admin
 
 ## Blog name
 ## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
@@ -65,7 +68,7 @@ wordpressTablePrefix: wp_
 ## Skip wizard installation (only if you use an external database that already contains WordPress data)
 ## ref: https://github.com/bitnami/bitnami-docker-wordpress#connect-wordpress-docker-container-to-an-existing-database
 ##
-wordpressSkipInstall: false
+wordpressSkipInstall: true
 
 ## Set up update strategy for wordpress installation. Set to Recreate if you use persistent volume that cannot be mounted by more than one pods to makesure the pods is destroyed first.
 ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
@@ -86,7 +89,7 @@ allowEmptyPassword: true
 ## Set Apache allowOverride to None
 ## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
 ##
-allowOverrideNone: false
+allowOverrideNone: true
 
 # ConfigMap with custom wordpress-htaccess.conf file (requires allowOverrideNone to true)
 customHTAccessCM:
@@ -106,22 +109,18 @@ customHTAccessCM:
 # smtpUsername:
 # smtpProtocol:
 
-replicaCount: 1
+replicaCount: 3
 
 externalDatabase:
 ## All of these values are only used when mariadb.enabled is set to false
   ## Database host
   host: localhost
-
   ## non-root Username for Wordpress Database
   user: bn_wordpress
-
   ## Database password
   password: ""
-
   ## Database name
   database: bitnami_wordpress
-
   ## Database port number
   port: 3306
 
@@ -150,8 +149,8 @@ mariadb:
   ## MariaDB admin password
   ## ref: https://github.com/bitnami/bitnami-docker-mariadb/blob/master/README.md#setting-the-root-password-on-first-run
   ##
-  # rootUser:
-  #   password:
+  rootUser:
+    password: Hunter2!
 
   ## Enable persistence using Persistent Volume Claims
   ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -166,15 +165,15 @@ mariadb:
       ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
       ##   GKE, AWS & OpenStack)
       ##
-      # storageClass: "-"
+      storageClass: nfs
       accessMode: ReadWriteOnce
-      size: 32Gi
+      size: 16Gi
 
 ## Kubernetes configuration
 ## For minikube, set this to NodePort, elsewhere use LoadBalancer or ClusterIP
 ##
 service:
-  type: LoadBalancer
+  type: ClusterIP
   # HTTP Port
   port: 80
   # HTTPS Port
@@ -189,7 +188,8 @@ service:
   ## Enable client source IP preservation
   ## ref http://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
   ##
-  externalTrafficPolicy: Cluster
+  #externalTrafficPolicy: Cluster
+  externalTrafficPolicy: Local
   annotations: {}
   ## Extra ports to expose (normally used with the `sidecar` value)
   # extraPorts:
@@ -215,12 +215,12 @@ readinessProbe:
 ## like the balancer to prevent HTTP 302 responses.  According to the Kubernetes
 ## docs, 302 should be considered "successful", but this issue on GitHub
 ## (https://github.com/kubernetes/kubernetes/issues/47893) shows that it isn't.
-# livenessProbeHeaders:
-# - name: X-Forwarded-Proto
-#   value: https
-# readinessProbeHeaders:
-# - name: X-Forwarded-Proto
-#   value: https
+livenessProbeHeaders:
+- name: X-Forwarded-Proto
+  value: https
+readinessProbeHeaders:
+- name: X-Forwarded-Proto
+  value: https
 
 ## Configure the ingress resource that allows you to access the
 ## WordPress installation. Set up the URL
@@ -231,7 +231,7 @@ ingress:
   enabled: true
 
   ## Set this to true in order to add the corresponding annotations for cert-manager
-  certManager: true
+  certManager: false
 
   ## Ingress annotations done as key:value pairs
   ## For a full list of possible ingress annotations, please see
@@ -239,24 +239,30 @@ ingress:
   ##
   ## If tls is set to true, annotation ingress.kubernetes.io/secure-backends: "true" will automatically be set
   ## If certManager is set to true, annotation kubernetes.io/tls-acme: "true" will automatically be set
-  annotations:
-  #  kubernetes.io/ingress.class: nginx
+  annotations: {
+    nginx.ingress.kubernetes.io/backend-protocol: "https",
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true",
+    nginx.ingress.kubernetes.io/ssl-passthrough: "false",
+    nginx.ingress.kubernetes.io/proxy-body-size: "128m",
+    #nginx.ingress.kubernetes.io/auth-type: "basic",
+    #nginx.ingress.kubernetes.io/auth-secret: "basic-auth",
+    nginx.ingress.kubernetes.io/affinity: "cookie",
+    nginx.ingress.kubernetes.io/session-cookie-name: "route",
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800",
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+  }
 
   ## The list of hostnames to be covered with this ingress record.
   ## Most likely this will be just one host, but in the event more hosts are needed, this is an array
   hosts:
-  - name: wordpress.local
-    path: /
-  - name: localhost
+  - name: wavebook.io
     path: /
 
   ## The tls configuration for the ingress
   ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
   tls:
-  - hosts:
-      - wordpress.local
-      - localhost
-    secretName: wordpress.local-tls
+  #- hosts:
+    #secretName: dashboard-certificates
 
   secrets:
   ## If you're providing your own certificates, please use this to add the certificates as secrets
@@ -285,11 +291,12 @@ persistence:
   ##   GKE, AWS & OpenStack)
   ##
   # storageClass: "-"
+  storageClass: nfs
   ##
   ## If you want to reuse an existing claim, you can pass the name of the PVC using
   ## the existingClaim variable
   # existingClaim: your-claim
-  accessMode: ReadWriteOnce
+  accessMode: ReadWriteMany
   size: 10Gi
 
 ## Configure resource requests and limits

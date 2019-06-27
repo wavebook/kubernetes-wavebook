@@ -79,6 +79,16 @@ kops-create:
 		--node-size=m5.large \
 		--node-count=2 \
 		${KUBE_DRIVER}
+	helm install \
+		--namespace kube-system \
+		--name kube-ingress \
+		-f helm.conf/nginx-ingress.yml \
+ 		stable/nginx-ingress 
+	helm install \
+		--namespace wordpress \
+		--name wavebook-wp \
+		-f helm.conf/wordpress.yml \
+		stable/wordpress
 # }}
 
 
